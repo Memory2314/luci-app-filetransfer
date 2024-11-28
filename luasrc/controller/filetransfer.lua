@@ -11,7 +11,8 @@ local csrf_token_file = "/tmp/csrf_token.txt"
 -- 生成并设置新的 CSRF Token
 function set_csrf_token()
     -- 生成一个新的 CSRF Token
-    local csrf_token = sys.exec("uuidgen")
+    -- local csrf_token = sys.exec("uuidgen")
+    local csrf_token = tostring(os.time()) .. tostring(math.random(100000, 999999))
     
     -- 存储 CSRF Token 到临时文件
     luci.sys.call("echo " .. csrf_token .. " > " .. csrf_token_file)
@@ -32,7 +33,7 @@ end
 
 -- 设置 CSRF 令牌
 function index()
-    entry({"admin", "system", "filetransfer"}, call("action_index"), translate("FileTransfer"), 89)
+    entry({"admin", "system", "filetransfer"}, cbi("updownload"), translate("FileTransfer"), 89)
 end
 
 -- 页面加载时生成并返回 CSRF Token
@@ -40,8 +41,6 @@ function action_index()
     -- 生成并存储 CSRF Token
     local csrf_token = set_csrf_token()
     luci.dispatcher.context.token = csrf_token  -- 将 token 存储到上下文中
-    -- 渲染页面，并将 CSRF Token 传递给模板
-    luci.template.render("cbi/updownload", {csrf_token = csrf_token})
 end
 
 -- 处理表单提交时验证 CSRF Token
