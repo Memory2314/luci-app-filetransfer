@@ -41,7 +41,7 @@ function action_index()
     local csrf_token = set_csrf_token()
     luci.dispatcher.context.token = csrf_token  -- 将 token 存储到上下文中
     -- 渲染页面，并将 CSRF Token 传递给模板
-    luci.template.render("updownload", {csrf_token = csrf_token})
+    luci.template.render("cbi/updownload", {csrf_token = csrf_token})
 end
 
 -- 处理表单提交时验证 CSRF Token
