@@ -2,7 +2,6 @@
     <label class="cbi-value" style="display:inline-block; width: 130px" for="dlfile"><%:Path on Route:%></label>
     <input class="cbi-input-file" style="width: 400px" type="text" id="dlfile" name="dlfile" />
     <!-- CSRF Token -->
-    <input type="hidden" name="token" value="<%= luci.dispatcher.context.token or '' %>" />
+    <input type="hidden" name="token" value="<%= csrf_token %>" />
     <input type="submit" class="cbi-button cbi-input-apply" name="download" value="<%:Download%>" />
 <%+cbi/valuefooter%>
-
