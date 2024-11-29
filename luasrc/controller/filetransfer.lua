@@ -32,8 +32,17 @@ end
 
 -- 设置 CSRF 令牌
 function index()
+    -- 基础文件传输页面
     entry({"admin", "system", "filetransfer"}, cbi("updownload"), translate("FileTransfer"), 89)
-    entry({"admin", "system", "filetransfer", "log"},cbi("log"),_("Server Logs"), 90).leaf = true
+    
+    entry({"admin", "system", "filetransfer", "startlog"},call("action_start")).leaf=true
+	entry({"admin", "system", "filetransfer", "refresh_log"},call("action_refresh_log"))
+	entry({"admin", "system", "filetransfer", "del_log"},call("action_del_log"))
+	entry({"admin", "system", "filetransfer", "del_start_log"},call("action_del_start_log"))
+    entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
+	entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))	`
+    -- 运行日志页面
+    entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 90).leaf = true
 end
 
 -- 页面加载时生成并返回 CSRF Token
