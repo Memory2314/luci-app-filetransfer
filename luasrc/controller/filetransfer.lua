@@ -33,6 +33,7 @@ end
 -- 设置 CSRF 令牌
 function index()
     entry({"admin", "system", "filetransfer"}, cbi("updownload"), translate("FileTransfer"), 89)
+    entry({"admin", "system", "filetransfer", "log"},cbi("log"),_("Server Logs"), 90).leaf = true
 end
 
 -- 页面加载时生成并返回 CSRF Token
