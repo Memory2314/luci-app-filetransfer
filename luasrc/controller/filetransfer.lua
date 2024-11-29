@@ -40,7 +40,7 @@ function index()
 	entry({"admin", "system", "filetransfer", "del_log"},call("action_del_log"))
 	entry({"admin", "system", "filetransfer", "del_start_log"},call("action_del_start_log"))
     entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
-	entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))	`
+	entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
     -- 运行日志页面
     entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 90).leaf = true
 end
