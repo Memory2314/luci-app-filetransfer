@@ -6,8 +6,10 @@ local sys = require "luci.sys"
 local dir = "/tmp/upload/"
 nixio.fs.mkdir(dir)
 
--- 获取 CSRF Token
+-- CSRF Token 文件路径
 local csrf_token_file = "/tmp/csrf_token.txt"
+
+-- 获取 CSRF Token
 function get_csrf_token()
     return luci.sys.exec("cat " .. csrf_token_file):gsub("\n", "")
 end
@@ -15,7 +17,7 @@ end
 -- 设置 CSRF Token
 function set_csrf_token()
     -- 生成新的 CSRF Token
-    local csrf_token = sys.exec("uuidgen"):gsub("\n", "")
+    local csrf_token = tostring(os.time()) .. tostring(math.random(100000, 999999))
     -- 存储到临时文件
     luci.sys.call("echo '" .. csrf_token .. "' > " .. csrf_token_file)
     return csrf_token
@@ -27,25 +29,27 @@ function clear_csrf_token()
 end
 
 -- 页面初始化时加载 CSRF Token
-ful = SimpleForm("upload", translate("Upload"), nil)
-ful.reset = false
-ful.submit = false
+local csrf_token = set_csrf_token()  -- 生成 CSRF Token
+luci.dispatcher.context.token = csrf_token  -- 将 Token 存储在上下文中
 
 -- 上传表单部分
-sul = ful:section(SimpleSection, "", translate("Upload file to '/tmp/upload/'"))
-fu = sul:option(FileUpload, "")
+local ful = SimpleForm("upload", translate("Upload"), nil)
+ful.reset = false
+ful.submit = false
+local sul = ful:section(SimpleSection, "", translate("Upload file to '/tmp/upload/'"))
+local fu = sul:option(FileUpload, "")
 fu.template = "cbi/other_upload"
-um = sul:option(DummyValue, "", nil)
+local um = sul:option(DummyValue, "", nil)
 um.template = "cbi/other_dvalue"
 
 -- 下载表单部分
-fdl = SimpleForm("download", translate("Download"), nil)
+local fdl = SimpleForm("download", translate("Download"), nil)
 fdl.reset = false
 fdl.submit = false
-sdl = fdl:section(SimpleSection, "", translate("Download file :input file/dir path"))
-fd = sdl:option(FileUpload, "")
+local sdl = fdl:section(SimpleSection, "", translate("Download file :input file/dir path"))
+local fd = sdl:option(FileUpload, "")
 fd.template = "cbi/other_download"
-dm = sdl:option(DummyValue, "", nil)
+local dm = sdl:option(DummyValue, "", nil)
 dm.template = "cbi/other_dvalue"
 
 -- 文件下载函数
@@ -104,12 +108,9 @@ http.setfilehandler(function(meta, chunk, eof)
 end)
 
 -- CSRF Token 处理
-local csrf_token = set_csrf_token()  -- 生成 CSRF Token
-luci.dispatcher.context.token = csrf_token  -- 将 Token 存储在上下文中
-
 -- 表单提交时验证 CSRF Token
 if luci.http.formvalue("upload") then
-    local csrf_token_from_form = luci.http.formvalue("token")
+    local csrf_token_from_form = luci.http.formvalue("csrf_token")
     if csrf_token_from_form ~= get_csrf_token() then
         um.value = translate("Invalid CSRF token!")
     else
@@ -119,7 +120,7 @@ if luci.http.formvalue("upload") then
         end
     end
 elseif luci.http.formvalue("download") then
-    local csrf_token_from_form = luci.http.formvalue("token")
+    local csrf_token_from_form = luci.http.formvalue("csrf_token")
     if csrf_token_from_form ~= get_csrf_token() then
         dm.value = translate("Invalid CSRF token!")
     else
@@ -145,16 +146,16 @@ for f in fs.glob("/tmp/upload/*") do
 end
 
 -- 显示文件列表
-form = SimpleForm("filelist", translate("Upload file list"), nil)
+local form = SimpleForm("filelist", translate("Upload file list"), nil)
 form.reset = false
 form.submit = false
 
-tb = form:section(Table, inits)
-nm = tb:option(DummyValue, "name", translate("File name"))
-mt = tb:option(DummyValue, "mtime", translate("Modify time"))
-ms = tb:option(DummyValue, "modestr", translate("Mode string"))
-sz = tb:option(DummyValue, "size", translate("Size"))
-btnrm = tb:option(Button, "remove", translate("Remove"))
+local tb = form:section(Table, inits)
+local nm = tb:option(DummyValue, "name", translate("File name"))
+local mt = tb:option(DummyValue, "mtime", translate("Modify time"))
+local ms = tb:option(DummyValue, "modestr", translate("Mode string"))
+local sz = tb:option(DummyValue, "size", translate("Size"))
+local btnrm = tb:option(Button, "remove", translate("Remove"))
 btnrm.render = function(self, section, scope)
     self.inputstyle = "remove"
     Button.render(self, section, scope)
@@ -166,13 +167,13 @@ btnrm.write = function(self, section)
     return v
 end
 
-function IsIpkFile(name)
+local function IsIpkFile(name)
     name = name or ""
     local ext = string.lower(string.sub(name, -4, -1))
     return ext == ".ipk"
 end
 
-btnis = tb:option(Button, "install", translate("Install"))
+local btnis = tb:option(Button, "install", translate("Install"))
 btnis.template = "cbi/other_button"
 btnis.render = function(self, section, scope)
     if not inits[section] then return false end

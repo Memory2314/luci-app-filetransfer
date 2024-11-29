@@ -11,7 +11,6 @@ local csrf_token_file = "/tmp/csrf_token.txt"
 -- 生成并设置新的 CSRF Token
 function set_csrf_token()
     -- 生成一个新的 CSRF Token
-    -- local csrf_token = sys.exec("uuidgen")
     local csrf_token = tostring(os.time()) .. tostring(math.random(100000, 999999))
     
     -- 存储 CSRF Token 到临时文件
@@ -58,7 +57,7 @@ function action_submit()
     -- 表单处理逻辑
     local message = luci.http.formvalue("message")
     luci.http.write("Form submitted successfully with message: " .. message)
-    
+
     -- 清理临时 CSRF Token 文件
     clear_csrf_token()
 end
