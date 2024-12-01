@@ -12,11 +12,11 @@ s.addremove = false
 log = s:option(TextValue, "clog")
 log.readonly=true
 log.pollcheck=true
-log.template="log"
+log.template="cbi/log"
 log.description = translate("")
 log.rows = 29
 
 -- m:append(Template("toolbar_show"))
-m:append(Template("config_editor"))
+m:append(Template("cbi/config_editor"))
 
 return m
