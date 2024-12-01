@@ -10,9 +10,9 @@ s.anonymous = true
 s.addremove = false
 
 log = s:option(TextValue, "clog")
-log.readonly=true
-log.pollcheck=true
-log.template="cbi/log"
+log.readonly = true
+log.pollcheck = true
+log.template = "cbi/log"
 log.description = translate("")
 log.rows = 29
 

@@ -41,7 +41,7 @@ function index()
      entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
  
      -- 日志页面
-     entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 2).leaf = true
+     entry({"admin", "system", "filetransfer", "log"}, cbi("filetransfer/log"), translate("Server Logs"), 2).leaf = true
  
      -- 日志页面相关接口
      entry({"admin", "system", "filetransfer", "startlog"}, call("action_start")).leaf = true
