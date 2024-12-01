@@ -5,9 +5,9 @@ local HTTP = require "luci.http"
 
 m = Map("filetransfer", translate("Server Logs"))
 s = m:section(TypedSection, "filetransfer")
-m.pageaction = false
+m.pageaction = false  -- 不显示保存和应用按钮
 s.anonymous = true
-s.addremove=false
+s.addremove = false
 
 log = s:option(TextValue, "clog")
 log.readonly=true

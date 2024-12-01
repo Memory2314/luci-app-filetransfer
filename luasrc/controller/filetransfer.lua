@@ -33,7 +33,7 @@ end
 -- 设置 CSRF 令牌
 function index()
      -- 主入口页面
-     entry({"admin", "system", "filetransfer"}, firstchild(), translate("File Transfer & Logs"), 89).dependent = false
+     entry({"admin", "system", "filetransfer"}, firstchild(), translate("FileTransfer"), 89).dependent = false
 
      -- 文件传输页面
      entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
