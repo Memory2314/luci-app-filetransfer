@@ -22,6 +22,7 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)/root/etc/filetransfer/config
+	mkdir -p $(PKG_BUILD_DIR)/root/usr/share/openclash/backup
 	cp -f "$(PKG_BUILD_DIR)/root/etc/config/filetransfer" "$(PKG_BUILD_DIR)/root/usr/share/filetransfer/backup/filetransfer" >/dev/null 2>&1
 endef
 
