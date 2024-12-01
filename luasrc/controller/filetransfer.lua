@@ -1,5 +1,7 @@
 module("luci.controller.filetransfer", package.seeall)
 
+
+
 -- 在控制器或页面的头部加载翻译
 local translate = require "luci.i18n".translate
 local sys = require "luci.sys"
