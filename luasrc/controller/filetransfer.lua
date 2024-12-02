@@ -21,6 +21,7 @@ function set_csrf_token()
     
     -- 将生成的 CSRF Token 记录到日志文件
     local log_message = "Generated CSRF Token: " .. csrf_token
+    luci.sys.call("echo " .. log_message .. " > " .. log_file)
     log_to_file(log_message)  -- 调用 log_to_file 函数写入日志
 
     return csrf_token
@@ -73,6 +74,7 @@ function action_index()
     -- 生成并存储 CSRF Token
     local csrf_token = set_csrf_token()
     luci.dispatcher.context.token = csrf_token  -- 将 token 存储到上下文中
+
 
     -- 将 CSRF Token 的创建过程记录到日志
     local log_message = "CSRF Token set during action_index: " .. csrf_token
