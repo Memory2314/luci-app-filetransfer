@@ -9,6 +9,7 @@ local uhttpd = require "luci.http"
 
 -- CSRF Token 存储路径
 local csrf_token_file = "/tmp/csrf_token.txt"
+local log_file = "/tmp/filetransfer.log"  -- 日志文件路径
 
 -- 生成并设置新的 CSRF Token
 function set_csrf_token()
@@ -18,7 +19,20 @@ function set_csrf_token()
     -- 存储 CSRF Token 到临时文件
     luci.sys.call("echo " .. csrf_token .. " > " .. csrf_token_file)
     
+    -- 将生成的 CSRF Token 记录到日志文件
+    local log_message = "Generated CSRF Token: " .. csrf_token
+    log_to_file(log_message)  -- 调用 log_to_file 函数写入日志
+
     return csrf_token
+end
+
+-- 记录日志到文件的函数
+function log_to_file(message)
+    local file = io.open(log_file, "a")  -- 打开文件，追加模式
+    if file then
+        file:write(os.date("%Y-%m-%d %H:%M:%S") .. " - " .. message .. "\n")
+        file:close()
+    end
 end
 
 -- 获取 CSRF Token
@@ -57,6 +71,10 @@ function action_index()
     -- 生成并存储 CSRF Token
     local csrf_token = set_csrf_token()
     luci.dispatcher.context.token = csrf_token  -- 将 token 存储到上下文中
+
+    -- 将 CSRF Token 的创建过程记录到日志
+    local log_message = "CSRF Token set during action_index: " .. csrf_token
+    log_to_file(log_message)  -- 记录到日志
 end
 
 -- 处理表单提交时验证 CSRF Token
@@ -90,82 +108,86 @@ end
 
 
 function action_refresh_log()
-	luci.http.prepare_content("application/json")
-	local logfile="/tmp/filetransfer.log"
-	local file = io.open(logfile, "r+")
-	local info, len, line, lens, cache, ex_match, line_trans
-	local data = ""
-	local limit = 1000
-	local log_tb = {}
-	local log_len = tonumber(luci.http.formvalue("log_len")) or 0
-	if file == nil then
- 		return nil
- 	end
- 	file:seek("set")
- 	info = file:read("*all")
- 	info = info:reverse()
- 	file:close()
- 	cache, len = string.gsub(info, '[^\n]+', "")
- 	if len == log_len then return nil end
-	if log_len == 0 then
-		if len > limit then lens = limit else lens = len end
-	else
-		lens = len - log_len
-	end
-	string.gsub(info, '[^\n]+', function(w) table.insert(log_tb, w) end, lens)
-	for i=1, lens do
-		line = log_tb[i]:reverse()
-		line_trans = line
-		ex_match = false
-		core_match = false
-		time_format = false
-		while true do
-			ex_keys = {"UDP%-Receive%-Buffer%-Size", "^Sec%-Fetch%-Mode", "^User%-Agent", "^Access%-Control", "^Accept", "^Origin", "^Referer", "^Connection", "^Pragma", "^Cache-"}
-			for key=1, #ex_keys do
-				if string.find (line, ex_keys[key]) then
-					ex_match = true
-					break
-				end
-			end
-    		if ex_match then break end
+    luci.http.prepare_content("application/json")
+    local logfile = "/tmp/filetransfer.log"
+    local file = io.open(logfile, "r+")
+    local info, len, line, lens, cache, ex_match, line_trans
+    local data = ""
+    local limit = 1000
+    local log_tb = {}
+    local log_len = tonumber(luci.http.formvalue("log_len")) or 0
+    if file == nil then
+        return nil
+    end
+    file:seek("set")
+    info = file:read("*all")
+    info = info:reverse()
+    file:close()
 
-			core_keys = {" DBG ", " INF ", "level=", " WRN ", " ERR ", " FTL "}
-			for key=1, #core_keys do
-				if string.find(string.sub(line, 0, 13), core_keys[key]) or (string.find(line, core_keys[key]) and core_keys[key] == "level=") then
-					core_match = true
-					if core_keys[key] ~= "level=" then
-						time_format = true
-					end
-					break
-				end
-			end
-			if time_format then
-				if string.match(string.sub(line, 0, 8), "%d%d:%d%d:%d%d") then
-					line_trans = '"'..os.date("%Y-%m-%d %H:%M:%S", tonumber(string.sub(line, 0, 8)))..'"'..string.sub(line, 9, -1)
-				end
-			end
-			if not core_match then
-				if not string.find (line, "【") or not string.find (line, "】") then
-					line_trans = trans_line_nolabel(line)
-				else
-					line_trans = trans_line(line)
-				end
-			end
-			if data == "" then
-				data = line_trans
-			elseif log_len == 0 and i == limit then
-				data = data .."\n" .. line_trans .. "\n..."
-			else
-				data = data .."\n" .. line_trans
-			end
-    		break
-    	end
-	end
-	luci.http.write_json({
-		len = len,
-		log = data;
-	})
+    cache, len = string.gsub(info, '[^\n]+', "")
+    if len == log_len then return nil end
+    if log_len == 0 then
+        if len > limit then lens = limit else lens = len end
+    else
+        lens = len - log_len
+    end
+
+    string.gsub(info, '[^\n]+', function(w) table.insert(log_tb, w) end, lens)
+    for i = 1, lens do
+        line = log_tb[i]:reverse()
+        line_trans = line
+        ex_match = false
+        core_match = false
+        time_format = false
+        while true do
+            ex_keys = {"UDP%-Receive%-Buffer%-Size", "^Sec%-Fetch%-Mode", "^User%-Agent", "^Access%-Control", "^Accept", "^Origin", "^Referer", "^Connection", "^Pragma", "^Cache-"}
+            for key = 1, #ex_keys do
+                if string.find(line, ex_keys[key]) then
+                    ex_match = true
+                    break
+                end
+            end
+            if ex_match then break end
+
+            core_keys = {" DBG ", " INF ", "level=", " WRN ", " ERR ", " FTL "}
+            for key = 1, #core_keys do
+                if string.find(string.sub(line, 0, 13), core_keys[key]) or (string.find(line, core_keys[key]) and core_keys[key] == "level=") then
+                    core_match = true
+                    if core_keys[key] ~= "level=" then
+                        time_format = true
+                    end
+                    break
+                end
+            end
+            if time_format then
+                if string.match(string.sub(line, 0, 8), "%d%d:%d%d:%d%d") then
+                    line_trans = '"' .. os.date("%Y-%m-%d %H:%M:%S", tonumber(string.sub(line, 0, 8))) .. '"' .. string.sub(line, 9, -1)
+                end
+            end
+            if not core_match then
+                if not string.find(line, "【") or not string.find(line, "】") then
+                    line_trans = trans_line_nolabel(line)
+                else
+                    line_trans = trans_line(line)
+                end
+            end
+            if data == "" then
+                data = line_trans
+            elseif log_len == 0 and i == limit then
+                data = data .. "\n" .. line_trans .. "\n..."
+            else
+                data = data .. "\n" .. line_trans
+            end
+            break
+        end
+    end
+
+    luci.http.write_json({
+        len = len,
+        log = data;
+    })
 end
+
 
 function action_del_log()
 	luci.sys.exec(": > /tmp/filetransfer.log")

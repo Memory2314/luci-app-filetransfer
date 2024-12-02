@@ -17,6 +17,6 @@ log.description = translate("")
 log.rows = 29
 
 -- m:append(Template("toolbar_show"))
-m:append(Template("cbi/config_editor"))
+-- m:append(Template("cbi/config_editor"))
 
 return m
