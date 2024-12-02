@@ -32,6 +32,8 @@ function log_to_file(message)
     if file then
         file:write(os.date("%Y-%m-%d %H:%M:%S") .. " - " .. message .. "\n")
         file:close()
+    else
+        print("Error opening log file")
     end
 end
 
@@ -109,6 +111,9 @@ end
 
 function action_refresh_log()
     luci.http.prepare_content("application/json")
+
+    -- 确保文件存在
+    local create_file = luci.sys.exec("touch /tmp/filetransfer.log")
     local logfile = "/tmp/filetransfer.log"
 
     -- 调试代码：检查日志文件写入
