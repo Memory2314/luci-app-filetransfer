@@ -64,10 +64,6 @@ function index()
      entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
      entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
      entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
-
-         -- 调试代码：检查日志文件写入
-    local output = luci.sys.exec("echo Hello > /tmp/filetransfer.log")
-    log_to_file("Command output: " .. output)
 end
 
 -- 页面加载时生成并返回 CSRF Token
@@ -114,6 +110,11 @@ end
 function action_refresh_log()
     luci.http.prepare_content("application/json")
     local logfile = "/tmp/filetransfer.log"
+
+    -- 调试代码：检查日志文件写入
+    local output = luci.sys.exec("echo Hello > /tmp/filetransfer.log")
+    log_to_file("Command output: " .. output)
+
     local file = io.open(logfile, "r+")
     local info, len, line, lens, cache, ex_match, line_trans
     local data = ""
