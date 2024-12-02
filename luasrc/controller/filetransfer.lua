@@ -56,7 +56,7 @@ function index()
  
      -- 日志页面
      entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 2).leaf = true
- 
+    
      -- 日志页面相关接口
      entry({"admin", "system", "filetransfer", "startlog"}, call("action_start")).leaf = true
      entry({"admin", "system", "filetransfer", "refresh_log"}, call("action_refresh_log"))
@@ -64,6 +64,10 @@ function index()
      entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
      entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
      entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
+
+         -- 调试代码：检查日志文件写入
+    local output = luci.sys.exec("echo Hello > /tmp/filetransfer.log")
+    log_to_file("Command output: " .. output)
 end
 
 -- 页面加载时生成并返回 CSRF Token
