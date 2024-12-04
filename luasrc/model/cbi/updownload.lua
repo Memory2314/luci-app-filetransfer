@@ -25,7 +25,15 @@ end
 
 -- 验证 CSRF Token
 local function validate_csrf_token(token)
-    return token == get_or_set_csrf_token()
+    if not token or #token == 0 then
+        write_log("CSRF token missing or empty.")
+        return false
+    end
+    local valid = token == get_or_set_csrf_token()
+    if not valid then
+        write_log("CSRF token validation failed: " .. token)
+    end
+    return valid
 end
 
 -- 日志记录函数
