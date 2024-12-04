@@ -191,6 +191,50 @@ local mt = tb:option(DummyValue, "mtime", translate("Modify time"))
 local ms = tb:option(DummyValue, "modestr", translate("Mode string"))
 local sz = tb:option(DummyValue, "size", translate("Size"))
 
+-- 安装 .ipk 文件
+function IsIpkFile(name)
+    name = name or ""
+    local ext = string.lower(string.sub(name, -4, -1))
+    return ext == ".ipk"
+end
+
+-- 安装按钮逻辑
+btnis = tb:option(Button, "install", translate("Install"))
+btnis.template = "cbi/other_button"
+btnis.render = function(self, section, scope)
+    if not inits[section] then return false end
+    if IsIpkFile(inits[section].name) then
+        scope.display = ""  -- 显示安装按钮
+    else
+        scope.display = "none"  -- 隐藏按钮
+    end
+    self.inputstyle = "apply"  -- 按钮样式
+    Button.render(self, section, scope)
+end
+
+-- 安装 .ipk 文件的操作
+btnis.write = function(self, section)
+    local filename = inits[section].name
+    if not IsIpkFile(filename) then
+        return
+    end
+
+    -- 执行安装命令
+    local install_cmd = "opkg install /tmp/upload/" .. filename
+    local result = luci.sys.call(install_cmd)
+
+    if result == 0 then
+        local msg = translate("IPK installation successful: ") .. filename
+        write_log(msg)
+        um.value = msg
+    else
+        local msg = translate("IPK installation failed: ") .. filename
+        write_log(msg)
+        um.value = msg
+    end
+end
+
+-- 删除文件按钮
 local btnrm = tb:option(Button, "remove", translate("Remove"))
 btnrm.inputstyle = "remove"
 btnrm.write = function(self, section)
