@@ -9,6 +9,10 @@ nixio.fs.mkdir(dir)
 -- CSRF Token 文件路径
 local csrf_token_file = "/tmp/csrf_token.txt"
 
+-- 日志文件路径
+local log_file = "/tmp/upload/operation_log.txt"
+fs.writefile(log_file, "", "w") -- 初始化日志文件
+
 -- 生成或获取 CSRF Token
 local function get_or_set_csrf_token()
     if not fs.access(csrf_token_file) then
@@ -22,6 +26,12 @@ end
 -- 验证 CSRF Token
 local function validate_csrf_token(token)
     return token == get_or_set_csrf_token()
+end
+
+-- 日志记录函数
+local function write_log(message)
+    local log_entry = os.date("[%Y-%m-%d %H:%M:%S] ") .. message .. "\n"
+    fs.writefile(log_file, log_entry, "a")
 end
 
 -- 页面初始化时加载 CSRF Token
@@ -55,6 +65,13 @@ dm.template = "cbi/other_dvalue"
 -- 文件下载函数
 local function download_file()
     local sPath = http.formvalue("dlfile")
+    if not sPath or #sPath == 0 then
+        local msg = translate("No file path specified for download.")
+        dm.value = msg
+        write_log(msg)
+        return
+    end
+
     local sFile = fs.basename(sPath)
 
     local fd
@@ -66,7 +83,9 @@ local function download_file()
     end
 
     if not fd then
-        dm.value = translate("Couldn't open file: ") .. sPath
+        local msg = translate("Couldn't open file: ") .. sPath
+        dm.value = msg
+        write_log(msg)
         return
     end
 
@@ -82,6 +101,7 @@ local function download_file()
 
     fd:close()
     http.close()
+    write_log("File downloaded successfully: " .. sPath)
 end
 
 -- 上传处理
@@ -91,7 +111,9 @@ http.setfilehandler(function(meta, chunk, eof)
         if not meta then return end
         fd = fs.open(dir .. meta.file, "w")
         if not fd then
-            um.value = translate("Create upload file error.")
+            local msg = translate("Create upload file error.")
+            um.value = msg
+            write_log(msg)
             return
         end
     end
@@ -100,7 +122,9 @@ http.setfilehandler(function(meta, chunk, eof)
     end
     if eof and fd then
         fd:close()
-        um.value = translate("File saved to") .. ' "/tmp/upload/' .. meta.file .. '"'
+        local msg = translate("File saved to") .. ' "/tmp/upload/' .. meta.file .. '"'
+        um.value = msg
+        write_log(msg)
     end
 end)
 
@@ -108,17 +132,23 @@ end)
 if http.formvalue("upload") then
     local csrf_token_from_form = http.formvalue("csrf_token")
     if not validate_csrf_token(csrf_token_from_form) then
-        um.value = translate("Invalid CSRF token!")
+        local msg = translate("Invalid CSRF token!")
+        um.value = msg
+        write_log(msg)
     else
         local file = http.formvalue("ulfile")
         if not file or #file == 0 then
-            um.value = translate("No specified upload file.")
+            local msg = translate("No specified upload file.")
+            um.value = msg
+            write_log(msg)
         end
     end
 elseif http.formvalue("download") then
     local csrf_token_from_form = http.formvalue("csrf_token")
     if not validate_csrf_token(csrf_token_from_form) then
-        dm.value = translate("Invalid CSRF token!")
+        local msg = translate("Invalid CSRF token!")
+        dm.value = msg
+        write_log(msg)
     else
         download_file()
     end
@@ -155,7 +185,21 @@ btnrm.write = function(self, section)
     local filename = inits[section].name
     if fs.unlink(dir .. filename) then
         table.remove(inits, section)
+        write_log("File removed: " .. filename)
     end
 end
 
-return ful, fdl, form
+-- 日志表单
+local log_form = SimpleForm("log", translate("Operation Log"), nil)
+log_form.reset = false
+log_form.submit = false
+
+local log_section = log_form:section(SimpleSection, "", translate("Recent Logs"))
+local log_view = log_section:option(TextValue, "log")
+log_view.rows = 10
+log_view.readonly = true
+log_view.cfgvalue = function()
+    return fs.readfile(log_file) or ""
+end
+
+return ful, fdl, form, log_form
