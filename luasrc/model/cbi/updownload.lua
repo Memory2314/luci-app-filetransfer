@@ -114,6 +114,10 @@ end
 
 -- 上传处理
 http.setfilehandler(function(meta, chunk, eof)
+    -- 打印 meta, chunk, eof 到前端页面
+    local log_message = "Meta: " .. tostring(meta) .. ", Chunk: " .. tostring(chunk) .. ", EOF: " .. tostring(eof)
+    um.value = log_message  -- 直接显示在前端页面
+    write_log(log_message)  -- 后台日志打印
     local fd
     if not fd then
         if not meta then return end
