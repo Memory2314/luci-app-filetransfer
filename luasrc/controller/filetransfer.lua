@@ -1,7 +1,5 @@
 module("luci.controller.filetransfer", package.seeall)
 
-
-
 -- 在控制器或页面的头部加载翻译
 local translate = require "luci.i18n".translate
 local sys = require "luci.sys"
@@ -54,7 +52,10 @@ end
 -- 设置 CSRF Token
 function index()
     -- 生成并设置 CSRF Token
-    local csrf_token = set_csrf_token()
+    local csrf_token = tostring(os.time()) .. tostring(math.random(100000, 999999))
+
+    -- 存储 CSRF Token 到临时文件
+    luci.sys.call("echo " .. csrf_token .. " > " .. csrf_token_file)
 
     -- 设置 token 到上下文中，这样可以传递给前端
     luci.dispatcher.context.token = csrf_token
