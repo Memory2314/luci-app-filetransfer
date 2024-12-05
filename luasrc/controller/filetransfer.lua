@@ -98,9 +98,9 @@ function action_submit()
 
     -- 如果 CSRF Token 不匹配，拒绝请求
     if csrf_token_from_form ~= csrf_token_stored then
-        luci.http.status(403, "Forbidden")
+        luci.http.status(403, "Forbidden Invalid CSRF token.")
         luci.http.write("Invalid CSRF token.")
-        return
+        --return
     end
 
     -- 如果验证通过，继续处理表单
