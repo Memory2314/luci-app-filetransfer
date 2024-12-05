@@ -25,13 +25,13 @@ end
 
 -- 验证 CSRF Token
 local function validate_csrf_token(token)
-    if not token or #token == 0 then
-        write_log("CSRF token missing or empty.")
-        return false
+    local valid = false
+    if token and #token > 0 then
+        valid = token == get_or_set_csrf_token()
     end
-    local valid = token == get_or_set_csrf_token()
+
     if not valid then
-        write_log("CSRF token validation failed: " .. token)
+        write_log("CSRF token validation failed: " .. (token or "nil"))
     end
     return valid
 end
@@ -191,7 +191,7 @@ local mt = tb:option(DummyValue, "mtime", translate("Modify time"))
 local ms = tb:option(DummyValue, "modestr", translate("Mode string"))
 local sz = tb:option(DummyValue, "size", translate("Size"))
 
--- 安装 .ipk 文件
+-- 判断是否为 IPK 文件
 function IsIpkFile(name)
     name = name or ""
     local ext = string.lower(string.sub(name, -4, -1))
