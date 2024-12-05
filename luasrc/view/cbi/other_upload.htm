@@ -1,6 +1,39 @@
-<%+cbi/valueheader%>
-    <label class="cbi-value" style="display:inline-block; width: 130px" for="ulfile"><%:Choose local file:%></label>
-    <input class="cbi-input-file" style="width: 400px" type="file" id="ulfile" name="ulfile" />
-    <input type="hidden" name="csrf_token" value="<%= luci.dispatcher.context.token %>" />
+<form id="uploadForm" enctype="multipart/form-data">
+    <div class="cbi-value">
+        <label class="cbi-value" style="display:inline-block; width: 130px" for="ulfile"><%:Choose local file:%></label>
+        <input class="cbi-input-file" style="width: 400px" type="file" id="ulfile" name="ulfile" />
+        <input type="hidden" name="csrf_token" value="<%= luci.dispatcher.context.token %>" />
+    </div>
     <input type="submit" class="cbi-button cbi-input-apply" name="upload" value="<%:Upload%>" />
-<%+cbi/valuefooter%>
+</form>
+
+<script>
+    // 获取 CSRF Token 直接从页面中
+    var csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    // 拦截表单提交
+    document.getElementById('uploadForm').onsubmit = function(event) {
+        event.preventDefault();  // 阻止默认提交行为
+
+        // 创建 FormData 对象，用于提交表单数据
+        var formData = new FormData();
+        formData.append('ulfile', document.getElementById('ulfile').files[0]);  // 文件上传
+        formData.append('csrf_token', csrfToken);  // CSRF Token
+
+        // 使用 fetch 发起带有 CSRF Token 的请求
+        fetch('/cgi-bin/luci/admin/system/filetransfer/submit', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': csrfToken  // 设置 CSRF Token 在请求头
+            },
+            body: formData  // 将表单数据作为请求体
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    };
+</script>
