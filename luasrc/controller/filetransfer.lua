@@ -51,15 +51,6 @@ end
 
 -- 设置 CSRF Token
 function index()
-    -- 生成并设置 CSRF Token
-    local csrf_token = "3ece83f86a97fc023cd2b85930b9b476"
-
-    -- 存储 CSRF Token 到临时文件
-    luci.sys.call("echo " .. csrf_token .. " > " .. csrf_token_file)
-
-    -- 设置 token 到上下文中，这样可以传递给前端
-    luci.dispatcher.context.token = csrf_token
-
     -- 页面入口配置
     entry({"admin", "system", "filetransfer"}, firstchild(), translate("FileTransfer"), 89).dependent = false
     entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
@@ -87,7 +78,6 @@ function action_index()
 end
 
 
--- 处理表单提交时验证 CSRF Token
 -- 处理表单提交时验证 CSRF Token
 function action_submit()
     -- 获取表单中的 CSRF Token
