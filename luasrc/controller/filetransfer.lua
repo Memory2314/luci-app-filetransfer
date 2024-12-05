@@ -27,6 +27,7 @@ function set_csrf_token()
     return csrf_token
 end
 
+
 -- 记录日志到文件的函数
 function log_to_file(message)
     local file = io.open(log_file, "a")  -- 打开文件，追加模式
@@ -49,25 +50,29 @@ function clear_csrf_token()
     luci.sys.call("rm -f " .. csrf_token_file)
 end
 
--- 设置 CSRF 令牌
-function index()
-     -- 主入口页面
-     entry({"admin", "system", "filetransfer"}, firstchild(), translate("FileTransfer"), 89).dependent = false
 
-     -- 文件传输页面
-     entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
- 
-     -- 日志页面
-     entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 2).leaf = true
-    
-     -- 日志页面相关接口
-     entry({"admin", "system", "filetransfer", "startlog"}, call("action_start")).leaf = true
-     entry({"admin", "system", "filetransfer", "refresh_log"}, call("action_refresh_log"))
-     entry({"admin", "system", "filetransfer", "del_log"}, call("action_del_log"))
-     entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
-     entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
-     entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
+-- 设置 CSRF Token
+function index()
+    -- 生成并设置 CSRF Token
+    local csrf_token = set_csrf_token()
+
+    -- 设置 token 到上下文中，这样可以传递给前端
+    luci.dispatcher.context.token = csrf_token
+
+    -- 页面入口配置
+    entry({"admin", "system", "filetransfer"}, firstchild(), translate("FileTransfer"), 89).dependent = false
+    entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
+    entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 2).leaf = true
+
+    -- 日志页面相关接口
+    entry({"admin", "system", "filetransfer", "startlog"}, call("action_start")).leaf = true
+    entry({"admin", "system", "filetransfer", "refresh_log"}, call("action_refresh_log"))
+    entry({"admin", "system", "filetransfer", "del_log"}, call("action_del_log"))
+    entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
+    entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
+    entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
 end
+
 
 -- 页面加载时生成并返回 CSRF Token
 function action_index()
@@ -75,15 +80,17 @@ function action_index()
     local csrf_token = set_csrf_token()
     luci.dispatcher.context.token = csrf_token  -- 将 token 存储到上下文中
 
-
     -- 将 CSRF Token 的创建过程记录到日志
     local log_message = "CSRF Token set during action_index: " .. csrf_token
     log_to_file(log_message)  -- 记录到日志
 end
 
+
 -- 处理表单提交时验证 CSRF Token
 function action_submit()
+    -- 获取表单中的 CSRF Token
     local csrf_token_from_form = luci.http.formvalue("csrf_token")
+    -- 获取存储的 CSRF Token
     local csrf_token_stored = get_csrf_token()
 
     -- 如果 CSRF Token 不匹配，拒绝请求
@@ -93,13 +100,14 @@ function action_submit()
         return
     end
 
-    -- 表单处理逻辑
+    -- 如果验证通过，继续处理表单
     local message = luci.http.formvalue("message")
     luci.http.write("Form submitted successfully with message: " .. message)
 
     -- 清理临时 CSRF Token 文件
     clear_csrf_token()
 end
+
 
 
 

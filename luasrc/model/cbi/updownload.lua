@@ -25,15 +25,16 @@ end
 
 -- 验证 CSRF Token
 local function validate_csrf_token(token)
-    local valid = false
-    if token and #token > 0 then
-        valid = token == get_or_set_csrf_token()
+    if not token or #token == 0 then
+        write_log("CSRF token missing or empty.")
+        return false
     end
-
-    if not valid then
-        write_log("CSRF token validation failed: " .. (token or "nil"))
+    local server_token = get_or_set_csrf_token()
+    if token ~= server_token then
+        write_log("CSRF token mismatch: expected " .. server_token .. ", got " .. token)
+        return false
     end
-    return valid
+    return true
 end
 
 -- 日志记录函数
@@ -142,11 +143,10 @@ end)
 
 -- 表单提交处理
 if http.formvalue("upload") then
-    local csrf_token_from_form = http.formvalue("csrf_token")
+    local csrf_token_from_form = http.formvalue("csrf_token")  -- 读取表单中的 CSRF Token
     if not validate_csrf_token(csrf_token_from_form) then
-        local msg = translate("Invalid CSRF token!")
-        um.value = msg
-        write_log(msg)
+        um.value = translate("Invalid CSRF token!")
+        write_log("CSRF token validation failed for upload action.")
     else
         local file = http.formvalue("ulfile")
         if not file or #file == 0 then
@@ -156,7 +156,7 @@ if http.formvalue("upload") then
         end
     end
 elseif http.formvalue("download") then
-    local csrf_token_from_form = http.formvalue("csrf_token")
+    local csrf_token_from_form = http.formvalue("csrf_token")  -- 读取表单中的 CSRF Token
     if not validate_csrf_token(csrf_token_from_form) then
         local msg = translate("Invalid CSRF token!")
         dm.value = msg
@@ -191,7 +191,7 @@ local mt = tb:option(DummyValue, "mtime", translate("Modify time"))
 local ms = tb:option(DummyValue, "modestr", translate("Mode string"))
 local sz = tb:option(DummyValue, "size", translate("Size"))
 
--- 判断是否为 IPK 文件
+-- 安装 .ipk 文件
 function IsIpkFile(name)
     name = name or ""
     local ext = string.lower(string.sub(name, -4, -1))
