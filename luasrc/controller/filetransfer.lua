@@ -52,7 +52,7 @@ end
 -- 设置 CSRF Token
 function index()
     -- 生成并设置 CSRF Token
-    local csrf_token = tostring(os.time()) .. tostring(math.random(100000, 999999))
+    local csrf_token = "3ece83f86a97fc023cd2b85930b9b476"
 
     -- 存储 CSRF Token 到临时文件
     luci.sys.call("echo " .. csrf_token .. " > " .. csrf_token_file)
