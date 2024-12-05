@@ -86,15 +86,28 @@ function action_index()
     log_to_file(log_message)  -- 记录到日志
 end
 
+
+-- 处理表单提交时验证 CSRF Token
 -- 处理表单提交时验证 CSRF Token
 function action_submit()
-    -- 从请求头获取 CSRF Token
-    local csrf_token_from_header = luci.http.header("X-CSRF-Token")
+    -- 获取表单中的 CSRF Token
+    local csrf_token_from_form = luci.http.formvalue("csrf_token")
     -- 获取存储的 CSRF Token
     local csrf_token_stored = get_csrf_token()
 
+    -- 记录日志
+    local log_file = "/tmp/csrf_log.txt"  -- 日志文件路径，可根据需求修改
+    local log_handle = io.open(log_file, "a")
+    if log_handle then
+        log_handle:write("CSRF Token from form: " .. (csrf_token_from_form or "nil") .. "\n")
+        log_handle:write("CSRF Token stored: " .. (csrf_token_stored or "nil") .. "\n")
+        log_handle:write("Timestamp: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
+        log_handle:write("----\n")
+        log_handle:close()
+    end
+
     -- 如果 CSRF Token 不匹配，拒绝请求
-    if csrf_token_from_header ~= csrf_token_stored then
+    if csrf_token_from_form ~= csrf_token_stored then
         luci.http.status(403, "Forbidden")
         luci.http.write("Invalid CSRF token.")
         return
@@ -107,7 +120,6 @@ function action_submit()
     -- 清理临时 CSRF Token 文件
     clear_csrf_token()
 end
-
 
 
 
