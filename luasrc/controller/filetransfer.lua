@@ -1,5 +1,7 @@
 module("luci.controller.filetransfer", package.seeall)
 
+
+
 -- 在控制器或页面的头部加载翻译
 local translate = require "luci.i18n".translate
 local sys = require "luci.sys"
@@ -48,23 +50,25 @@ function clear_csrf_token()
     luci.sys.call("rm -f " .. csrf_token_file)
 end
 
-
--- 设置 CSRF Token
+-- 设置 CSRF 令牌
 function index()
-    -- 页面入口配置
-    entry({"admin", "system", "filetransfer"}, firstchild(), translate("FileTransfer"), 89).dependent = false
-    entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
-    entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 2).leaf = true
+     -- 主入口页面
+     entry({"admin", "system", "filetransfer"}, firstchild(), translate("FileTransfer"), 89).dependent = false
 
-    -- 日志页面相关接口
-    entry({"admin", "system", "filetransfer", "startlog"}, call("action_start")).leaf = true
-    entry({"admin", "system", "filetransfer", "refresh_log"}, call("action_refresh_log"))
-    entry({"admin", "system", "filetransfer", "del_log"}, call("action_del_log"))
-    entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
-    entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
-    entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
+     -- 文件传输页面
+     entry({"admin", "system", "filetransfer", "updownload"}, cbi("updownload"), translate("File Transfer"), 1).leaf = true
+ 
+     -- 日志页面
+     entry({"admin", "system", "filetransfer", "log"}, cbi("log"), translate("Server Logs"), 2).leaf = true
+    
+     -- 日志页面相关接口
+     entry({"admin", "system", "filetransfer", "startlog"}, call("action_start")).leaf = true
+     entry({"admin", "system", "filetransfer", "refresh_log"}, call("action_refresh_log"))
+     entry({"admin", "system", "filetransfer", "del_log"}, call("action_del_log"))
+     entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
+     entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
+     entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
 end
-
 
 -- 页面加载时生成并返回 CSRF Token
 function action_index()
@@ -97,11 +101,11 @@ function action_submit()
     end
 
     -- 如果 CSRF Token 不匹配，拒绝请求
-    if csrf_token_from_form ~= csrf_token_stored then
-        luci.http.status(403, "Forbidden Invalid CSRF token.")
-        luci.http.write("Invalid CSRF token.")
-        --return
-    end
+    -- if csrf_token_from_form ~= csrf_token_stored then
+    --    luci.http.status(403, "Forbidden Invalid.")
+    --    luci.http.write("Invalid CSRF token.")
+    --    return
+    --end
 
     -- 如果验证通过，继续处理表单
     local message = luci.http.formvalue("message")
@@ -130,7 +134,7 @@ function action_refresh_log()
     local logfile = "/tmp/filetransfer.log"
 
     -- 调试代码：检查日志文件写入
-    local output = luci.sys.exec("echo Hello > /tmp/filetransfer.log")
+    local output = luci.sys.exec("echo Hello world！ > /tmp/filetransfer.log")
     log_to_file("Command output: " .. output)
 
     local file = io.open(logfile, "r+")
