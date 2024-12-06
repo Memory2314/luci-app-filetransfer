@@ -11,7 +11,7 @@ local csrf_token_file = "/tmp/csrf_token.txt"
 
 -- 日志文件路径
 local log_file = "/tmp/upload/operation_log.txt"
-fs.writefile(log_file, "", "w") -- 初始化日志文件
+fs.writefile(log_file, "", "a") -- 初始化日志文件
 
 -- 生成或获取 CSRF Token
 local function get_or_set_csrf_token()
@@ -122,7 +122,7 @@ http.setfilehandler(function(meta, chunk, eof)
     local fd
     if not fd then
         if not meta then return end
-        fd = fs.open(dir .. meta.file, "w")
+        fd = fs.open(dir .. meta.file, "a")
         if not fd then
             local msg = translate("Create upload file error.")
             um.value = msg
