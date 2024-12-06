@@ -147,12 +147,17 @@ end
 
 -- 表单提交处理
 if http.formvalue("upload") then
-    local csrf_token_from_form = http.formvalue("csrf_token")  -- 读取表单中的 CSRF Token
-    if not validate_csrf_token(csrf_token_from_form) then
+    -- 获取 CSRF Token
+    local csrf_token_from_form = http.formvalue("csrf_token")
+    if not csrf_token_from_form or #csrf_token_from_form == 0 then
+        um.value = translate("CSRF token is missing.")
+        write_log("CSRF token is missing for upload action.")
+    elseif not validate_csrf_token(csrf_token_from_form) then
         um.value = translate("Invalid CSRF token!")
         write_log("CSRF token validation failed for upload action.")
     else
-        local upload_file = http.formvalue("ulfile")  -- 读取上传文件字段
+        -- 获取上传文件字段
+        local upload_file = http.formvalue("ulfile")
         if not upload_file or #upload_file == 0 then
             local msg = translate("No file specified for upload.")
             um.value = msg
@@ -160,12 +165,17 @@ if http.formvalue("upload") then
         end
     end
 elseif http.formvalue("download") then
-    local csrf_token_from_form = http.formvalue("csrf_token")  -- 读取表单中的 CSRF Token
-    if not validate_csrf_token(csrf_token_from_form) then
+    -- 获取 CSRF Token
+    local csrf_token_from_form = http.formvalue("csrf_token")
+    if not csrf_token_from_form or #csrf_token_from_form == 0 then
+        dm.value = translate("CSRF token is missing.")
+        write_log("CSRF token is missing for download action.")
+    elseif not validate_csrf_token(csrf_token_from_form) then
         dm.value = translate("Invalid CSRF token!")
         write_log("CSRF token validation failed for download action.")
     else
-        local download_path = http.formvalue("dlfile")  -- 读取下载文件路径字段
+        -- 获取下载路径字段
+        local download_path = http.formvalue("dlfile")
         if not download_path or #download_path == 0 then
             local msg = translate("No file path specified for download.")
             dm.value = msg
@@ -175,6 +185,7 @@ elseif http.formvalue("download") then
         end
     end
 end
+
 
 
 -- 获取上传目录文件列表
