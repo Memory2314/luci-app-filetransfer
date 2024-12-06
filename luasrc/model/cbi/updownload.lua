@@ -4,14 +4,26 @@ local sys = require "luci.sys"
 
 -- 设置文件上传目录
 local dir = "/tmp/upload/"
-nixio.fs.mkdir(dir)
+fs.mkdir(dir)
 
 -- CSRF Token 文件路径
 local csrf_token_file = "/tmp/csrf_token.txt"
 
 -- 日志文件路径
 local log_file = "/tmp/upload/operation_log.txt"
-fs.writefile(log_file, "", "a") -- 初始化日志文件
+if not fs.access(log_file) then
+    fs.writefile(log_file, "") -- 初始化日志文件
+end
+
+-- 日志记录函数
+local function write_log(message)
+    local log_entry = os.date("[%Y-%m-%d %H:%M:%S] ") .. message .. "\n"
+    local f = io.open(log_file, "a")
+    if f then
+        f:write(log_entry)
+        f:close()
+    end
+end
 
 -- 生成或获取 CSRF Token
 local function get_or_set_csrf_token()
@@ -37,12 +49,6 @@ local function validate_csrf_token(token)
     return true
 end
 
--- 日志记录函数
-local function write_log(message)
-    local log_entry = os.date("[%Y-%m-%d %H:%M:%S] ") .. message .. "\n"
-    fs.writefile(log_file, log_entry, "a")
-end
-
 -- 页面初始化时加载 CSRF Token
 local csrf_token = get_or_set_csrf_token()
 luci.dispatcher.context.token = csrf_token
@@ -58,6 +64,33 @@ fu.template = "cbi/other_upload"
 
 local um = sul:option(DummyValue, "", nil)
 um.template = "cbi/other_dvalue"
+
+-- 上传处理
+http.setfilehandler(function(meta, chunk, eof)
+    -- 打印 meta, chunk, eof 到前端页面
+    local log_message = "Meta: " .. tostring(meta) .. ", Chunk: " .. tostring(chunk) .. ", EOF: " .. tostring(eof)
+    um.value = log_message  -- 直接显示在前端页面
+    write_log(log_message)  -- 后台日志打印
+    local fd
+    if meta and not fd then
+        fd = io.open(dir .. meta.file, "w")
+        if not fd then
+            local msg = translate("Failed to open file for writing: ") .. meta.file
+            um.value = msg
+            write_log(msg)
+            return
+        end
+    end
+    if chunk and fd then
+        fd:write(chunk)
+    end
+    if eof and fd then
+        fd:close()
+        local msg = translate("File saved to ") .. dir .. meta.file
+        um.value = msg
+        write_log(msg)
+    end
+end)
 
 -- 下载表单
 local fdl = SimpleForm("download", translate("Download"), nil)
@@ -82,13 +115,13 @@ local function download_file()
     end
 
     local sFile = fs.basename(sPath)
-
     local fd
+
     if fs.stat(sPath, "type") == "directory" then
-        fd = io.popen('tar -C "%s" -cz .' % {sPath}, "r")
+        fd = io.popen(string.format('tar -C "%s" -cz .', sPath), "r")
         sFile = sFile .. ".tar.gz"
     else
-        fd = fs.open(sPath, "r")
+        fd = io.open(sPath, "r")
     end
 
     if not fd then
@@ -99,47 +132,18 @@ local function download_file()
     end
 
     dm.value = nil
-    http.header('Content-Disposition', 'attachment; filename="%s"' % {sFile})
+    http.header('Content-Disposition', string.format('attachment; filename="%s"', sFile))
     http.prepare_content("application/octet-stream")
 
     while true do
-        local block = fd:read(nixio.const.buffersize)
-        if not block or #block == 0 then break end
+        local block = fd:read(8192)
+        if not block then break end
         http.write(block)
     end
 
     fd:close()
-    http.close()
     write_log("File downloaded successfully: " .. sPath)
 end
-
--- 上传处理
-http.setfilehandler(function(meta, chunk, eof)
-    -- 打印 meta, chunk, eof 到前端页面
-    local log_message = "Meta: " .. tostring(meta) .. ", Chunk: " .. tostring(chunk) .. ", EOF: " .. tostring(eof)
-    um.value = log_message  -- 直接显示在前端页面
-    write_log(log_message)  -- 后台日志打印
-    local fd
-    if not fd then
-        if not meta then return end
-        fd = fs.open(dir .. meta.file, "a")
-        if not fd then
-            local msg = translate("Create upload file error.")
-            um.value = msg
-            write_log(msg)
-            return
-        end
-    end
-    if chunk and fd then
-        fd:write(chunk)
-    end
-    if eof and fd then
-        fd:close()
-        local msg = translate("File saved to") .. ' "/tmp/upload/' .. meta.file .. '"'
-        um.value = msg
-        write_log(msg)
-    end
-end)
 
 -- 表单提交处理
 if http.formvalue("upload") then
@@ -147,20 +151,12 @@ if http.formvalue("upload") then
     if not validate_csrf_token(csrf_token_from_form) then
         um.value = translate("Invalid CSRF token!")
         write_log("CSRF token validation failed for upload action.")
-    else
-        local file = http.formvalue("ulfile")
-        if not file or #file == 0 then
-            local msg = translate("No specified upload file.")
-            um.value = msg
-            write_log(msg)
-        end
     end
 elseif http.formvalue("download") then
     local csrf_token_from_form = http.formvalue("csrf_token")  -- 读取表单中的 CSRF Token
     if not validate_csrf_token(csrf_token_from_form) then
-        local msg = translate("Invalid CSRF token!")
-        dm.value = msg
-        write_log(msg)
+        dm.value = translate("Invalid CSRF token!")
+        write_log("CSRF token validation failed for download action.")
     else
         download_file()
     end
