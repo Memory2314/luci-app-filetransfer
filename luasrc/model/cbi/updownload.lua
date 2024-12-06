@@ -166,13 +166,6 @@ if http.formvalue("upload") then
     end
 elseif http.formvalue("download") then
     -- 获取 CSRF Token
-    -- 获取下载路径字段
-    local download_path = http.formvalue("dlfile")
-    if not download_path or #download_path == 0 then
-        local msg = translate("No file path specified for download.")
-        dm.value = msg
-        write_log(msg)  -- 记录日志
-    end
     local csrf_token_from_form = http.formvalue("csrf_token")
     if not csrf_token_from_form or #csrf_token_from_form == 0 then
         dm.value = translate("CSRF token is missing.")
