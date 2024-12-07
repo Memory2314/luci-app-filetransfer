@@ -165,22 +165,22 @@ if http.formvalue("upload") then
         end
     end
 elseif http.formvalue("download") then
-    -- 获取 CSRF Token
-    local csrf_token_from_form = http.formvalue("csrf_token")
-    if not csrf_token_from_form or #csrf_token_from_form == 0 then
-        dm.value = translate("CSRF token is missing.")
-        write_log("CSRF token is missing for download action.")
-    elseif not validate_csrf_token(csrf_token_from_form) then
-        dm.value = translate("Invalid CSRF token!")
-        write_log("CSRF token validation failed for download action.")
+    -- 获取下载路径字段
+    local download_path = http.formvalue("dlfile")
+        
+    -- 路径为空时的处理逻辑
+    if not download_path or #download_path == 0 then
+        local msg = translate("No file path specified for download.")
+        dm.value = msg  -- 将错误信息显示在界面
+        write_log(msg)  -- 记录日志
     else
-        -- 获取下载路径字段
-        local download_path = http.formvalue("dlfile")
-        if not download_path or #download_path == 0 then
-            local msg = translate("No file path specified for download.")
-            dm.value = msg
+        -- 检查文件是否存在
+        if not nixio.fs.stat(download_path) then
+            local msg = translate("Specified file or directory does not exist: ") .. download_path
+            dm.value = msg  -- 将错误信息显示在界面
             write_log(msg)  -- 记录日志
         else
+            -- 下载文件
             download_file()
         end
     end
