@@ -68,6 +68,8 @@ function index()
      entry({"admin", "system", "filetransfer", "del_start_log"}, call("action_del_start_log"))
      entry({"admin", "system", "filetransfer", "log_level"}, call("action_log_level"))
      entry({"admin", "system", "filetransfer", "switch_log"}, call("action_switch_log"))
+     entry({"admin", "system", "filetransfer", "submit"}, call("action_submit")).leaf = true
+
 end
 
 -- 页面加载时生成并返回 CSRF Token
@@ -101,11 +103,11 @@ function action_submit()
     end
 
     -- 如果 CSRF Token 不匹配，拒绝请求
-    -- if csrf_token_from_form ~= csrf_token_stored then
-    --    luci.http.status(403, "Forbidden Invalid.")
-    --    luci.http.write("Invalid CSRF token.")
-    --    return
-    --end
+    if csrf_token_from_form ~= csrf_token_stored then
+        luci.http.status(403, "Forbidden Invalid.")
+        luci.http.write("Invalid CSRF token.")
+        return
+    end
 
     -- 如果验证通过，继续处理表单
     local message = luci.http.formvalue("message")
