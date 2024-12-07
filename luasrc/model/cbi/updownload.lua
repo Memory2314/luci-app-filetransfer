@@ -28,7 +28,7 @@ end
 -- 生成或获取 CSRF Token
 local function get_or_set_csrf_token()
     if not fs.access(csrf_token_file) then
-        local token = tostring(os.time()) .. tostring(math.random(100000, 999999))
+        local token = luci.dispatcher.context.token --tostring(os.time()) .. tostring(math.random(100000, 999999))
         fs.writefile(csrf_token_file, token)
         return token
     end
@@ -51,7 +51,7 @@ end
 
 -- 页面初始化时加载 CSRF Token
 local csrf_token = get_or_set_csrf_token()
-luci.dispatcher.context.token = csrf_token
+--luci.dispatcher.context.token = csrf_token
 
 -- 上传表单
 local ful = SimpleForm("upload", translate("Upload"), nil)
