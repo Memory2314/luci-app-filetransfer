@@ -46,4 +46,5 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DATA) ./luasrc/view/cbi/* $(1)/usr/lib/lua/luci/view/cbi/
 endef
 
+
 $(eval $(call BuildPackage,$(PKG_NAME)))
