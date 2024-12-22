@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}-${{ matrix.sdk }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - aarch64_cortex-a53
+        sdk:
+          - openwrt-23.05
+          - openwrt-24.10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        uses: openwrt/gh-action-sdk@go1.23
+        env:
+          ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
+          FEEDNAME: packages_ci
+          PACKAGES: luci-app-filetransfer
+          NO_REFRESH_CHECK: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.arch }}-${{ matrix.sdk }}
+          path: bin/packages/${{ matrix.arch }}/packages_ci/*.ipk
